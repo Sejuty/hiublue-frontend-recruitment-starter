@@ -66,6 +66,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (savedEmail) {
       setRememberedEmail(savedEmail);
     }
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsAuthenticated(true);
+    }
   }, []);
 
   return (
