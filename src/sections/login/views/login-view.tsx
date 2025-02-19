@@ -15,7 +15,7 @@ import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -62,6 +62,7 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 export default function SignIn() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Local state for form fields
   const [email, setEmail] = React.useState<string>("");
@@ -71,12 +72,13 @@ export default function SignIn() {
     e.preventDefault();
     try {
       await login(email, password);
-      router.push("/");
+      // Get the redirect URL from search params, or default to dashboard
+      const redirectTo = searchParams.get("redirect") || "/";
+      router.push(redirectTo);
     } catch (error) {
       console.log(error);
     }
   };
-
   return (
     <>
       <CssBaseline enableColorScheme />
