@@ -17,9 +17,10 @@ export default function DashboardView() {
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
+    } else {
+      router.push("/");
     }
   }, [isAuthenticated, router]);
-
 
   if (!isAuthenticated) {
     return null;
