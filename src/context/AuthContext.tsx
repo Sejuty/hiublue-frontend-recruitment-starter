@@ -8,7 +8,6 @@ import React, {
   useEffect,
 } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 
 export const AuthContext = createContext<AuthContextProps | undefined>(
   undefined
@@ -38,22 +37,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { token, user } = await response.json();
 
-      const tokenExpiration = rememberMe ? 7 : 1;
-      Cookies.set("token", token, {
-        expires: tokenExpiration,
-        secure: true,
-        sameSite: "strict",
-      });
+      localStorage.setItem("token", token);
 
       if (rememberMe) {
-        Cookies.set("rememberedEmail", email, {
-          expires: 30,
-          secure: true,
-          sameSite: "strict",
-        });
+        localStorage.setItem("rememberedEmail", email);
         setRememberedEmail(email);
       } else {
-        Cookies.remove("rememberedEmail");
+        localStorage.removeItem("rememberedEmail");
         setRememberedEmail(null);
       }
       setUser(user);
@@ -65,15 +55,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    Cookies.remove("token");
+    localStorage.removeItem("token");
     setUser(null);
     setIsAuthenticated(false);
     router.push("/login");
   };
 
-  
   useEffect(() => {
-    const savedEmail = Cookies.get("rememberedEmail");
+    const savedEmail = localStorage.getItem("rememberedEmail");
     if (savedEmail) {
       setRememberedEmail(savedEmail);
     }
