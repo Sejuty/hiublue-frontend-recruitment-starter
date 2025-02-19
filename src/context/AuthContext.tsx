@@ -3,30 +3,28 @@
 import React, {
   createContext,
   useState,
-  useEffect,
   ReactNode,
   useContext,
+  useEffect,
 } from "react";
-import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 export const AuthContext = createContext<AuthContextProps | undefined>(
   undefined
 );
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const router = useRouter();
+  const [rememberedEmail, setRememberedEmail] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = Cookies.get("token");
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe: boolean
+  ): Promise<void> => {
     try {
       const response = await fetch("https://dummy-1.hiublue.com/api/login", {
         method: "POST",
@@ -38,18 +36,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error("Invalid credentials");
       }
 
-      const { token, user }: { token: string; user: User } =
-        await response.json();
+      const { token, user } = await response.json();
+
+      const tokenExpiration = rememberMe ? 7 : 1;
+      Cookies.set("token", token, {
+        expires: tokenExpiration,
+        secure: true,
+        sameSite: "strict",
+      });
+
+      if (rememberMe) {
+        Cookies.set("rememberedEmail", email, {
+          expires: 30,
+          secure: true,
+          sameSite: "strict",
+        });
+        setRememberedEmail(email);
+      } else {
+        Cookies.remove("rememberedEmail");
+        setRememberedEmail(null);
+      }
       setUser(user);
       setIsAuthenticated(true);
-
-      Cookies.set("token", token, {
-        expires: 7,
-        secure: true,
-        sameSite: "Strict",
-      });
     } catch (error) {
-      console.error("Login failed:", (error as Error).message);
+      console.error("Login failed:", error);
+      throw error;
     }
   };
 
@@ -57,21 +68,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.remove("token");
     setUser(null);
     setIsAuthenticated(false);
-    router.push("/signin");
+    router.push("/login");
   };
 
+  
+  useEffect(() => {
+    const savedEmail = Cookies.get("rememberedEmail");
+    if (savedEmail) {
+      setRememberedEmail(savedEmail);
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        login,
+        logout,
+        rememberedEmail,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
-};
-
-// Custom hook for using auth context
-export const useAuth = (): AuthContextProps => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 };

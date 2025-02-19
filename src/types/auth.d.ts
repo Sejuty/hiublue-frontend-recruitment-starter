@@ -7,8 +7,9 @@ interface User {
 interface AuthContextProps {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
+  rememberedEmail: string | null;
 }
 
 interface AuthProviderProps {

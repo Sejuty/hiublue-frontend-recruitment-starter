@@ -1,6 +1,4 @@
 "use client";
-
-import * as React from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -14,8 +12,10 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
-import { useAuth } from "@/context/AuthContext";
+
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -60,25 +60,39 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignIn() {
-  const { login } = useAuth();
+  const { login, rememberedEmail} = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Local state for form fields
-  const [email, setEmail] = React.useState<string>("");
-  const [password, setPassword] = React.useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [rememberMe, setRememberMe] = useState<boolean>(false);
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await login(email, password);
-      // Get the redirect URL from search params, or default to dashboard
-      const redirectTo = searchParams.get("redirect") || "/";
-      router.push(redirectTo);
+      await login(email, password, rememberMe);
+      setRedirectTo(searchParams.get("redirect") || "/");
     } catch (error) {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    if (redirectTo) {
+      router.push(redirectTo);
+    }
+  }, [redirectTo, router]);
+
+  useEffect(() => {
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, [rememberedEmail]);
+
+
   return (
     <>
       <CssBaseline enableColorScheme />
@@ -137,7 +151,13 @@ export default function SignIn() {
               />
             </FormControl>
             <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
+              control={
+                <Checkbox
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  color="primary"
+                />
+              }
               label="Remember me"
             />
             <Button type="submit" fullWidth variant="contained">

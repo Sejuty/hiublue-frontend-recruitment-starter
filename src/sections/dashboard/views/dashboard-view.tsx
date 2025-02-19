@@ -1,21 +1,29 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@mui/material/Button";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardView() {
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
-  if (!isAuthenticated) {
-    router.push("/login");
-    return null;
-  }
 
   const handleLogout = () => {
     logout();
     router.push("/login");
   };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, router]);
+
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <>
